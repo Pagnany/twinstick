@@ -1,7 +1,7 @@
 use crate::player::Player;
 use bevy::{input::gamepad::GamepadEvent, prelude::*};
 
-pub fn gamepad_system(
+pub fn gamepad_movement_system(
     time: Res<Time>,
     gamepads: Query<&Gamepad>,
     mut player_query: Query<&mut Player>,
@@ -15,7 +15,13 @@ pub fn gamepad_system(
             player.velocity.x += left_stick_x * player.move_acceleration * time.delta_secs();
             player.velocity.y += left_stick_y * player.move_acceleration * time.delta_secs();
         }
+    }
+}
 
+pub fn gamepad_aim_system(gamepads: Query<&Gamepad>, mut player_query: Query<&mut Player>) {
+    let mut player = player_query.single_mut().unwrap();
+
+    for gamepad in &gamepads {
         let right_stick_x = gamepad.get(GamepadAxis::RightStickX).unwrap();
         let right_stick_y = gamepad.get(GamepadAxis::RightStickY).unwrap();
         if right_stick_x.abs() > 0.1 || right_stick_y.abs() > 0.1 {

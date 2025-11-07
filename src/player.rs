@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use std::f32::consts::PI;
 
 #[derive(Component)]
 pub struct Player {
@@ -42,7 +43,7 @@ pub fn player_movement_system(time: Res<Time>, mut query: Query<(&mut Player, &m
 
     // texture is rotated
     // so PI / 2.0 is subtracted
-    transform.rotation = Quat::from_rotation_z(player.angle - crate::PI / 2.0);
+    transform.rotation = Quat::from_rotation_z(player.angle - PI / 2.0);
 
     player.velocity.x -= player.velocity.x * player.friction * time.delta_secs();
     player.velocity.y -= player.velocity.y * player.friction * time.delta_secs();

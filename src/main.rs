@@ -4,10 +4,9 @@ use bevy::{
 };
 
 pub mod input_gamepad;
+pub mod input_keyboard_mouse;
 pub mod player;
 pub mod systems;
-
-pub const PI: f32 = std::f32::consts::PI;
 
 const WINDOW_TITLE: &str = "Twinstick";
 pub const WINDOW_WIDTH: f32 = 1920.0;
@@ -45,7 +44,10 @@ fn main() {
         Update,
         (
             systems::kill_game_on_esc,
-            input_gamepad::gamepad_system,
+            input_gamepad::gamepad_movement_system,
+            input_gamepad::gamepad_aim_system,
+            input_keyboard_mouse::keyboard_move_system,
+            input_keyboard_mouse::mouse_aim_system,
             player::player_movement_system,
         ),
     );
