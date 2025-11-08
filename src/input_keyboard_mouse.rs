@@ -36,10 +36,20 @@ pub fn keyboard_move_system(
     }
 }
 
-pub fn mouse_aim_system(window: Single<&Window, With<PrimaryWindow>>) {
-    if let Some(position) = window.cursor_position() {
-        println!("Cursor is inside the primary window, at {:?}", position);
-    } else {
-        println!("Cursor is not in the game window.");
+pub fn mouse_aim_system(
+    window: Single<&Window, With<PrimaryWindow>>,
+    mut player_query: Query<(&mut Player, &Transform)>,
+) {
+    let (mut player, player_trans) = player_query.single_mut().unwrap();
+    // Rotate player to face mouse cursor
+    // player coordinates are centered at (0,0)
+    // window coordinates are top-left at (0,0)
+    if let Some(mouse_pos) = window.cursor_position() {
+        let player_pos = Vec2::new(
+            player_trans.translation.x + crate::WINDOW_WIDTH / 2.0,
+            (player_trans.translation.y - crate::WINDOW_HEIGHT / 2.0).abs(),
+        );
+        let direction = mouse_pos - player_pos;
+        player.angle = -direction.y.atan2(direction.x);
     }
 }
