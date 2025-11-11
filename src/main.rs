@@ -1,4 +1,5 @@
 use bevy::{
+    dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig},
     prelude::*,
     window::{EnabledButtons, WindowResolution, WindowTheme},
 };
@@ -16,28 +17,45 @@ const UPDATE_INTERVAL: f64 = 1.0 / 50.0;
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins((DefaultPlugins
-        .set(WindowPlugin {
-            primary_window: Some(Window {
-                title: WINDOW_TITLE.into(),
-                name: Some(WINDOW_TITLE.into()),
-                position: WindowPosition::Centered(MonitorSelection::Primary),
-                resizable: false,
-                resolution: WindowResolution::new(WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32),
-                enabled_buttons: EnabledButtons {
-                    close: true,
-                    maximize: false,
-                    minimize: false,
-                },
-                window_theme: Some(WindowTheme::Dark),
+    app.add_plugins((
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: WINDOW_TITLE.into(),
+                    name: Some(WINDOW_TITLE.into()),
+                    position: WindowPosition::Centered(MonitorSelection::Primary),
+                    resizable: false,
+                    resolution: WindowResolution::new(WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32),
+                    enabled_buttons: EnabledButtons {
+                        close: true,
+                        maximize: false,
+                        minimize: false,
+                    },
+                    window_theme: Some(WindowTheme::Dark),
+                    ..default()
+                }),
+                ..default()
+            })
+            .set(AssetPlugin {
+                meta_check: bevy::asset::AssetMetaCheck::Never,
                 ..default()
             }),
-            ..default()
-        })
-        .set(AssetPlugin {
-            meta_check: bevy::asset::AssetMetaCheck::Never,
-            ..default()
-        }),));
+        FpsOverlayPlugin {
+            config: FpsOverlayConfig {
+                text_config: TextFont {
+                    font_size: 15.0,
+                    ..default()
+                },
+                text_color: Color::srgb(0.0, 1.0, 0.0),
+                refresh_interval: core::time::Duration::from_millis(100),
+                enabled: true,
+                frame_time_graph_config: FrameTimeGraphConfig {
+                    enabled: false,
+                    ..default()
+                },
+            },
+        },
+    ));
     app.insert_resource(Time::<Fixed>::from_seconds(UPDATE_INTERVAL));
     app.add_systems(Startup, setup);
     app.add_systems(
