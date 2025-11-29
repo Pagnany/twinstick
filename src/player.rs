@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use std::f32::consts::PI;
+use std::time::Duration;
 
 #[derive(Component)]
 pub struct Player {
@@ -9,6 +10,7 @@ pub struct Player {
     pub angle: f32,
     pub move_acceleration: f32,
     pub friction: f32,
+    pub shoot_cooldown: Timer,
 }
 
 impl Default for Player {
@@ -19,6 +21,7 @@ impl Default for Player {
             angle: 0.0,
             move_acceleration: 15000.0,
             friction: 15.0,
+            shoot_cooldown: Timer::new(Duration::from_millis(200), TimerMode::Once),
         }
     }
 }

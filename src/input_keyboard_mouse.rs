@@ -1,4 +1,5 @@
 use crate::player::Player;
+use crate::projectile::Projectile;
 use bevy::{
     prelude::*,
     window::{PrimaryWindow, Window},
@@ -51,5 +52,36 @@ pub fn mouse_aim_system(
         );
         let direction = mouse_pos - player_pos;
         player.angle = -direction.y.atan2(direction.x);
+    }
+}
+
+pub fn mouse_shoot_projectile(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut player: Query<(&Transform, &mut Player)>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+) {
+    let (transform, mut player) = player.single_mut().unwrap();
+
+    player.shoot_cooldown.tick(time.delta());
+
+    if mouse_input.pressed(MouseButton::Left) && player.shoot_cooldown.is_finished() {
+        player.shoot_cooldown.reset();
+
+        let projectile_speed = 1500.0;
+        let velocity = Vec2::new(
+            projectile_speed * player.angle.cos(),
+            projectile_speed * player.angle.sin(),
+        );
+
+        commands.spawn((
+            Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(10.0, 10.0)),
+            Transform::from_xyz(transform.translation.x, transform.translation.y, 0.0),
+            Projectile {
+                velocity,
+                damage: 10.0,
+                from_player: true,
+            },
+        ));
     }
 }
