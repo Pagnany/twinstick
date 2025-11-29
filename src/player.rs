@@ -4,24 +4,26 @@ use std::time::Duration;
 
 #[derive(Component)]
 pub struct Player {
+    pub health: i32,
     pub radius: f32,
     pub velocity: Vec2,
     /// Angle in radians
     pub angle: f32,
     pub move_acceleration: f32,
     pub friction: f32,
-    pub shoot_cooldown: Timer,
+    pub shoot_cooldown_std: Timer,
 }
 
 impl Default for Player {
     fn default() -> Self {
         Player {
+            health: 1000,
             radius: 15.0,
             velocity: Vec2::ZERO,
             angle: 0.0,
             move_acceleration: 15000.0,
             friction: 15.0,
-            shoot_cooldown: Timer::new(Duration::from_millis(200), TimerMode::Once),
+            shoot_cooldown_std: Timer::new(Duration::from_millis(200), TimerMode::Once),
         }
     }
 }

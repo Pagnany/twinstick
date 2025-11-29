@@ -45,8 +45,8 @@ fn main() {
         Update,
         (
             systems::kill_game_on_esc,
-            input_gamepad::gamepad_movement_system,
-            input_gamepad::gamepad_aim_system,
+            // input_gamepad::gamepad_movement_system,
+            // input_gamepad::gamepad_aim_system,
             input_keyboard_mouse::keyboard_move_system,
             input_keyboard_mouse::mouse_aim_system,
             input_keyboard_mouse::mouse_shoot_projectile,
