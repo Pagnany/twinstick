@@ -5,6 +5,7 @@ use std::time::Duration;
 #[derive(Component)]
 pub struct Player {
     pub health: i32,
+    pub shield: i32,
     pub radius: f32,
     pub velocity: Vec2,
     /// Angle in radians
@@ -18,6 +19,7 @@ impl Default for Player {
     fn default() -> Self {
         Player {
             health: 1000,
+            shield: 0,
             radius: 15.0,
             velocity: Vec2::ZERO,
             angle: 0.0,

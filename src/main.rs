@@ -10,8 +10,8 @@ pub mod projectile;
 pub mod systems;
 
 const WINDOW_TITLE: &str = "Twinstick";
-pub const WINDOW_WIDTH: f32 = 1920.0;
-pub const WINDOW_HEIGHT: f32 = 1080.0;
+pub const WINDOW_WIDTH: f32 = 1280.0;
+pub const WINDOW_HEIGHT: f32 = 720.0;
 
 const UPDATE_INTERVAL: f64 = 1.0 / 50.0;
 
