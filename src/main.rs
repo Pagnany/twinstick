@@ -3,6 +3,7 @@ use bevy::{
     window::{EnabledButtons, WindowResolution, WindowTheme},
 };
 
+pub mod enemy;
 pub mod input_gamepad;
 pub mod input_keyboard_mouse;
 pub mod player;
@@ -10,8 +11,8 @@ pub mod projectile;
 pub mod systems;
 
 const WINDOW_TITLE: &str = "Twinstick";
-pub const WINDOW_WIDTH: f32 = 1280.0;
-pub const WINDOW_HEIGHT: f32 = 720.0;
+pub const WINDOW_WIDTH: f32 = 1920.0;
+pub const WINDOW_HEIGHT: f32 = 1080.0;
 
 const UPDATE_INTERVAL: f64 = 1.0 / 50.0;
 
@@ -54,6 +55,7 @@ fn main() {
             projectile::projectile_movement_system,
         ),
     );
+    app.add_systems(FixedUpdate, (enemy::projectile_enemy_collision_system,));
     app.run();
 }
 
@@ -65,5 +67,17 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Sprite::from_image(player_texture),
         player::Player::default(),
+    ));
+
+    commands.spawn((
+        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
+        Transform::from_xyz(-300.0, 100.0, -0.1),
+        enemy::Enemy::default(),
+    ));
+
+    commands.spawn((
+        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
+        Transform::from_xyz(250.0, -150.0, -0.1),
+        enemy::Enemy::default(),
     ));
 }

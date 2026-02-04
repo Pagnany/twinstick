@@ -76,11 +76,12 @@ pub fn mouse_shoot_projectile(
             );
 
             commands.spawn((
-                Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(10.0, 10.0)),
-                Transform::from_xyz(transform.translation.x, transform.translation.y, -0.1),
+                Sprite::from_color(Color::srgb(0.8, 0.8, 0.2), Vec2::new(10.0, 10.0)),
+                Transform::from_xyz(transform.translation.x, transform.translation.y, -0.2),
                 Projectile {
+                    radius: 5.0,
                     velocity,
-                    damage: 10.0,
+                    damage: 50,
                     from_player: true,
                 },
             ));

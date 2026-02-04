@@ -2,8 +2,9 @@ use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Projectile {
+    pub radius: f32,
     pub velocity: Vec2,
-    pub damage: f32,
+    pub damage: i32,
     pub from_player: bool,
 }
 
