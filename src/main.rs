@@ -10,6 +10,11 @@ pub mod player;
 pub mod projectile;
 pub mod systems;
 
+#[derive(Resource)]
+pub struct GameOver {
+    pub is_game_over: bool,
+}
+
 const WINDOW_TITLE: &str = "Twinstick";
 pub const WINDOW_WIDTH: f32 = 1920.0;
 pub const WINDOW_HEIGHT: f32 = 1080.0;
@@ -41,6 +46,9 @@ fn main() {
             ..default()
         }),));
     app.insert_resource(Time::<Fixed>::from_seconds(UPDATE_INTERVAL));
+    app.insert_resource(GameOver {
+        is_game_over: false,
+    });
     app.add_systems(Startup, setup);
     app.add_systems(
         Update,
@@ -53,9 +61,17 @@ fn main() {
             input_keyboard_mouse::mouse_shoot_projectile,
             player::player_movement_system,
             projectile::projectile_movement_system,
+            enemy::enemy_movement_system,
+            systems::game_over_system,
         ),
     );
-    app.add_systems(FixedUpdate, (enemy::projectile_enemy_collision_system,));
+    app.add_systems(
+        FixedUpdate,
+        (
+            enemy::projectile_enemy_collision_system,
+            enemy::enemy_player_collision_system,
+        ),
+    );
     app.run();
 }
 
@@ -69,15 +85,28 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         player::Player::default(),
     ));
 
+    // Spawn enemies outside the screen
     commands.spawn((
         Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
-        Transform::from_xyz(-300.0, 100.0, -0.1),
+        Transform::from_xyz(-crate::WINDOW_WIDTH / 2.0 - 100.0, 0.0, -0.1),
         enemy::Enemy::default(),
     ));
 
     commands.spawn((
         Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
-        Transform::from_xyz(250.0, -150.0, -0.1),
+        Transform::from_xyz(crate::WINDOW_WIDTH / 2.0 + 100.0, 0.0, -0.1),
+        enemy::Enemy::default(),
+    ));
+
+    commands.spawn((
+        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
+        Transform::from_xyz(0.0, -crate::WINDOW_HEIGHT / 2.0 - 100.0, -0.1),
+        enemy::Enemy::default(),
+    ));
+
+    commands.spawn((
+        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
+        Transform::from_xyz(0.0, crate::WINDOW_HEIGHT / 2.0 + 100.0, -0.1),
         enemy::Enemy::default(),
     ));
 }
