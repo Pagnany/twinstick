@@ -4,8 +4,8 @@ linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 
 # for Windows
-[target.x86_64-pc-windows-msvc]
-linker = "rust-lld.exe"
+# [target.x86_64-pc-windows-msvc]
+# linker = "rust-lld.exe"
 
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"
@@ -13,4 +13,4 @@ rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
 
 [env]
 # for my Windows PC
-# WGPU_BACKEND = "dx12"
+WGPU_BACKEND = "dx12"

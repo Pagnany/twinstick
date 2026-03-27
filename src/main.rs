@@ -56,6 +56,8 @@ fn main() {
             systems::kill_game_on_esc,
             // input_gamepad::gamepad_movement_system,
             // input_gamepad::gamepad_aim_system,
+            // input_gamepad::gamepad_shoot_system,
+            // input_gamepad::gamepad_input_all_events,
             input_keyboard_mouse::keyboard_move_system,
             input_keyboard_mouse::mouse_aim_system,
             input_keyboard_mouse::mouse_shoot_projectile,

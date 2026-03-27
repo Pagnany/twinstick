@@ -33,10 +33,13 @@ pub fn gamepad_aim_system(gamepads: Query<&Gamepad>, mut player_query: Query<&mu
 
 pub fn gamepad_shoot_system(
     mut commands: Commands,
+    time: Res<Time>,
     gamepads: Query<&Gamepad>,
     mut player: Query<(&Transform, &mut Player)>,
 ) {
     let (transform, mut player) = player.single_mut().unwrap();
+
+    player.shoot_cooldown_std.tick(time.delta());
 
     for gamepad in &gamepads {
         if gamepad.get(GamepadButton::RightTrigger2).unwrap() > 0.5 {

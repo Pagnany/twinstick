@@ -57,13 +57,10 @@ pub fn mouse_aim_system(
 
 pub fn mouse_shoot_projectile(
     mut commands: Commands,
-    time: Res<Time>,
     mut player: Query<(&Transform, &mut Player)>,
     mouse_input: Res<ButtonInput<MouseButton>>,
 ) {
     let (transform, mut player) = player.single_mut().unwrap();
-
-    player.shoot_cooldown_std.tick(time.delta());
 
     if mouse_input.pressed(MouseButton::Left) {
         if player.shoot_cooldown_std.is_finished() {

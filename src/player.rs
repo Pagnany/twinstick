@@ -33,6 +33,8 @@ impl Default for Player {
 pub fn player_movement_system(time: Res<Time>, mut query: Query<(&mut Player, &mut Transform)>) {
     let (mut player, mut transform) = query.single_mut().unwrap();
 
+    player.shoot_cooldown_std.tick(time.delta());
+
     // Update position
     // Clamp to window bounds
     transform.translation.x += player.velocity.x * time.delta_secs();
