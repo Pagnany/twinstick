@@ -72,6 +72,7 @@ fn main() {
         (
             enemy::projectile_enemy_collision_system,
             enemy::enemy_player_collision_system,
+            enemy::enemy_spawn_system,
         ),
     );
     app.run();
@@ -85,30 +86,5 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Sprite::from_image(player_texture),
         player::Player::default(),
-    ));
-
-    // Spawn enemies outside the screen
-    commands.spawn((
-        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
-        Transform::from_xyz(-crate::WINDOW_WIDTH / 2.0 - 100.0, 0.0, -0.1),
-        enemy::Enemy::default(),
-    ));
-
-    commands.spawn((
-        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
-        Transform::from_xyz(crate::WINDOW_WIDTH / 2.0 + 100.0, 0.0, -0.1),
-        enemy::Enemy::default(),
-    ));
-
-    commands.spawn((
-        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
-        Transform::from_xyz(0.0, -crate::WINDOW_HEIGHT / 2.0 - 100.0, -0.1),
-        enemy::Enemy::default(),
-    ));
-
-    commands.spawn((
-        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
-        Transform::from_xyz(0.0, crate::WINDOW_HEIGHT / 2.0 + 100.0, -0.1),
-        enemy::Enemy::default(),
     ));
 }

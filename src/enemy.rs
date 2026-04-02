@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use rand::RngExt;
 
 use crate::player::Player;
 use crate::projectile::Projectile;
@@ -80,4 +81,46 @@ pub fn projectile_enemy_collision_system(
             }
         }
     }
+}
+
+pub fn enemy_spawn_system(mut commands: Commands, enemy_query: Query<(&Transform, &Enemy)>) {
+    let max_enemies = 5;
+    let enemy_count = enemy_query.iter().count();
+    if enemy_count >= max_enemies {
+        return;
+    }
+    let mut rng = rand::rngs::ThreadRng::default();
+    let side = rng.random_range(0..=3);
+    let (x, y) = match side {
+        0 => (
+            -crate::WINDOW_WIDTH / 2.0 - 100.0,
+            rng.random_range(
+                -crate::WINDOW_HEIGHT / 2.0 - 100.0..=crate::WINDOW_HEIGHT / 2.0 + 100.0,
+            ),
+        ),
+        1 => (
+            crate::WINDOW_WIDTH / 2.0 + 100.0,
+            rng.random_range(
+                -crate::WINDOW_HEIGHT / 2.0 - 100.0..=crate::WINDOW_HEIGHT / 2.0 + 100.0,
+            ),
+        ),
+        2 => (
+            rng.random_range(
+                -crate::WINDOW_WIDTH / 2.0 - 100.0..=crate::WINDOW_WIDTH / 2.0 + 100.0,
+            ),
+            -crate::WINDOW_HEIGHT / 2.0 - 100.0,
+        ),
+        _ => (
+            rng.random_range(
+                -crate::WINDOW_WIDTH / 2.0 - 100.0..=crate::WINDOW_WIDTH / 2.0 + 100.0,
+            ),
+            crate::WINDOW_HEIGHT / 2.0 + 100.0,
+        ),
+    };
+
+    commands.spawn((
+        Sprite::from_color(Color::srgb(0.8, 0.2, 0.2), Vec2::new(40.0, 40.0)),
+        Transform::from_xyz(x, y, -0.1),
+        Enemy::default(),
+    ));
 }
