@@ -22,6 +22,9 @@ pub const WINDOW_HEIGHT: f32 = 1080.0;
 const UPDATE_INTERVAL: f64 = 1.0 / 50.0;
 
 fn main() {
+    #[cfg(target_os = "windows")]
+    std::env::set_var("WGPU_BACKEND", "dx12");
+
     let mut app = App::new();
     app.add_plugins((DefaultPlugins
         .set(WindowPlugin {
