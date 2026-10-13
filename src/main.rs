@@ -16,8 +16,24 @@ pub struct Score {
     pub value: u32,
 }
 
+#[derive(Resource, Default, Clone, Copy, PartialEq, Eq)]
+enum InputMethod {
+    #[default]
+    KeyboardMouse,
+    Gamepad,
+}
+
 #[derive(Component)]
 struct ScoreDisplay;
+
+#[derive(Component)]
+struct InputMethodCheckbox;
+
+#[derive(Component)]
+struct InputMethodCheckboxMark;
+
+#[derive(Component)]
+struct InputMethodCheckboxBox;
 
 #[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GameState {
@@ -62,6 +78,7 @@ fn main() {
         }),));
     app.insert_resource(Time::<Fixed>::from_seconds(UPDATE_INTERVAL));
     app.init_resource::<Score>();
+    app.init_resource::<InputMethod>();
     app.init_state::<GameState>();
     app.add_systems(Startup, setup_camera);
     app.add_systems(
@@ -70,6 +87,8 @@ fn main() {
             systems::kill_game_on_esc,
             menu::start_button_system,
             menu::return_to_menu_button_system,
+            toggle_input_method,
+            update_input_method_checkbox,
         ),
     );
     app.add_systems(
@@ -86,13 +105,17 @@ fn main() {
     app.add_systems(
         Update,
         (
-            // input_gamepad::gamepad_movement_system,
-            // input_gamepad::gamepad_aim_system,
-            // input_gamepad::gamepad_shoot_system,
+            input_gamepad::gamepad_movement_system,
+            input_gamepad::gamepad_aim_system,
+            input_gamepad::gamepad_shoot_system,
             // input_gamepad::gamepad_input_all_events,
-            input_keyboard_mouse::keyboard_move_system,
-            input_keyboard_mouse::mouse_aim_system,
-            input_keyboard_mouse::mouse_shoot_projectile,
+        )
+            .run_if(in_state(GameState::Playing))
+            .run_if(use_gamepad),
+    );
+    app.add_systems(
+        Update,
+        (
             player::player_movement_system,
             player::shield_orbital_system,
             projectile::projectile_movement_system,
@@ -101,10 +124,32 @@ fn main() {
         )
             .run_if(in_state(GameState::Playing)),
     );
-    app.add_systems(OnEnter(GameState::Menu), menu::spawn_menu_screen);
-    app.add_systems(OnExit(GameState::Menu), menu::despawn_menu_screen);
-    app.add_systems(OnEnter(GameState::Playing), spawn_gameplay);
-    app.add_systems(OnExit(GameState::Playing), despawn_gameplay);
+    app.add_systems(
+        Update,
+        (
+            input_keyboard_mouse::keyboard_move_system,
+            input_keyboard_mouse::mouse_aim_system,
+            input_keyboard_mouse::mouse_shoot_projectile,
+        )
+            .run_if(in_state(GameState::Playing))
+            .run_if(use_keyboard_mouse),
+    );
+    app.add_systems(
+        OnEnter(GameState::Menu),
+        (menu::spawn_menu_screen, spawn_input_method_checkbox),
+    );
+    app.add_systems(
+        OnExit(GameState::Menu),
+        (menu::despawn_menu_screen, despawn_input_method_checkbox),
+    );
+    app.add_systems(
+        OnEnter(GameState::Playing),
+        (spawn_gameplay, spawn_input_method_checkbox),
+    );
+    app.add_systems(
+        OnExit(GameState::Playing),
+        (despawn_gameplay, despawn_input_method_checkbox),
+    );
     app.add_systems(OnEnter(GameState::GameOver), menu::spawn_game_over_screen);
     app.add_systems(OnExit(GameState::GameOver), menu::despawn_game_over_screen);
     app.run();
@@ -114,7 +159,130 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-fn spawn_gameplay(mut commands: Commands, asset_server: Res<AssetServer>, mut score: ResMut<Score>) {
+fn use_gamepad(input_method: Res<InputMethod>) -> bool {
+    *input_method == InputMethod::Gamepad
+}
+
+fn use_keyboard_mouse(input_method: Res<InputMethod>) -> bool {
+    *input_method == InputMethod::KeyboardMouse
+}
+
+fn spawn_input_method_checkbox(mut commands: Commands, input_method: Res<InputMethod>) {
+    commands
+        .spawn((
+            Button,
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(20.0),
+                right: Val::Px(20.0),
+                width: Val::Px(190.0),
+                height: Val::Px(48.0),
+                padding: UiRect::all(Val::Px(10.0)),
+                column_gap: Val::Px(10.0),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            GlobalZIndex(1),
+            BackgroundColor(Color::srgb(0.12, 0.16, 0.24)),
+            InputMethodCheckbox,
+        ))
+        .with_children(|checkbox| {
+            checkbox
+                .spawn((
+                    Node {
+                        width: Val::Px(24.0),
+                        height: Val::Px(24.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    InputMethodCheckboxBox,
+                    BackgroundColor(if *input_method == InputMethod::Gamepad {
+                        Color::srgb(0.12, 0.65, 0.32)
+                    } else {
+                        Color::srgb(0.28, 0.32, 0.4)
+                    }),
+                ))
+                .with_child((
+                    Text::new(if *input_method == InputMethod::Gamepad {
+                        "✓"
+                    } else {
+                        ""
+                    }),
+                    TextFont {
+                        font_size: FontSize::Px(18.0),
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    InputMethodCheckboxMark,
+                ));
+            checkbox.spawn((
+                Text::new("Use gamepad"),
+                TextFont {
+                    font_size: FontSize::Px(18.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+        });
+}
+
+fn despawn_input_method_checkbox(
+    mut commands: Commands,
+    checkbox: Query<Entity, With<InputMethodCheckbox>>,
+) {
+    for entity in &checkbox {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn toggle_input_method(
+    checkboxes: Query<&Interaction, (Changed<Interaction>, With<InputMethodCheckbox>)>,
+    mut input_method: ResMut<InputMethod>,
+) {
+    if checkboxes
+        .iter()
+        .any(|interaction| *interaction == Interaction::Pressed)
+    {
+        *input_method = match *input_method {
+            InputMethod::KeyboardMouse => InputMethod::Gamepad,
+            InputMethod::Gamepad => InputMethod::KeyboardMouse,
+        };
+    }
+}
+
+fn update_input_method_checkbox(
+    input_method: Res<InputMethod>,
+    mut marks: Query<&mut Text, With<InputMethodCheckboxMark>>,
+    mut boxes: Query<&mut BackgroundColor, With<InputMethodCheckboxBox>>,
+) {
+    if !input_method.is_changed() {
+        return;
+    }
+
+    let checked = *input_method == InputMethod::Gamepad;
+    for mut mark in &mut marks {
+        **mark = if checked {
+            "✓".to_owned()
+        } else {
+            String::new()
+        };
+    }
+    for mut background in &mut boxes {
+        **background = if checked {
+            Color::srgb(0.12, 0.65, 0.32).into()
+        } else {
+            Color::srgb(0.28, 0.32, 0.4).into()
+        };
+    }
+}
+
+fn spawn_gameplay(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut score: ResMut<Score>,
+) {
     score.value = 0;
     let player_texture = asset_server.load("textures/player01.png");
 
