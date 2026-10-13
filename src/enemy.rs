@@ -9,6 +9,7 @@ pub struct Enemy {
     pub radius: f32,
     pub health: i32,
     pub speed: f32,
+    pub spawn_warning: Option<Timer>,
 }
 
 impl Default for Enemy {
@@ -17,8 +18,31 @@ impl Default for Enemy {
             radius: 20.0,
             health: 100,
             speed: 150.0,
+            spawn_warning: None,
         }
     }
+}
+
+impl Enemy {
+    fn can_be_damaged(&self) -> bool {
+        self.spawn_warning.as_ref().is_none_or(Timer::is_finished)
+    }
+}
+
+#[derive(Component)]
+pub struct PositionSpawnedEnemy;
+
+#[derive(Resource)]
+pub struct PositionEnemySpawnTimer(Timer);
+
+impl Default for PositionEnemySpawnTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(5.0, TimerMode::Once))
+    }
+}
+
+pub fn reset_position_enemy_spawn_timer(mut timer: ResMut<PositionEnemySpawnTimer>) {
+    timer.0.reset();
 }
 
 pub fn enemy_player_collision_system(
@@ -30,6 +54,10 @@ pub fn enemy_player_collision_system(
     let player_pos = player_transform.translation.truncate();
 
     for (enemy_transform, enemy) in enemy_query.iter() {
+        if !enemy.can_be_damaged() {
+            continue;
+        }
+
         let enemy_pos = enemy_transform.translation.truncate();
         let distance = player_pos.distance(enemy_pos);
 
@@ -52,7 +80,7 @@ pub fn shield_orb_enemy_collision_system(
         let orb_pos = orb_transform.translation.truncate();
 
         for (enemy_entity, enemy_transform, enemy) in enemy_query.iter() {
-            if hit_enemies.contains(&enemy_entity) {
+            if hit_enemies.contains(&enemy_entity) || !enemy.can_be_damaged() {
                 continue;
             }
 
@@ -71,18 +99,64 @@ pub fn shield_orb_enemy_collision_system(
 pub fn enemy_movement_system(
     time: Res<Time>,
     player_query: Query<&Transform, With<Player>>,
-    mut enemy_query: Query<(&mut Transform, &Enemy), Without<Player>>,
+    mut enemy_query: Query<(&mut Transform, &mut Enemy, &mut Sprite), Without<Player>>,
 ) {
     let player_transform = player_query.single().unwrap();
     let player_pos = player_transform.translation.truncate();
 
-    for (mut transform, enemy) in enemy_query.iter_mut() {
+    for (mut transform, mut enemy, mut sprite) in enemy_query.iter_mut() {
+        if let Some(timer) = &mut enemy.spawn_warning {
+            timer.tick(time.delta());
+            if !timer.is_finished() {
+                continue;
+            }
+            enemy.spawn_warning = None;
+            sprite.color = Color::srgb(0.8, 0.2, 0.2);
+        }
+
         let enemy_pos = transform.translation.truncate();
-        let direction = (player_pos - enemy_pos).normalize();
+        let offset = player_pos - enemy_pos;
+        if offset.length_squared() <= f32::EPSILON {
+            continue;
+        }
+        let direction = offset.normalize();
 
         transform.translation.x += direction.x * enemy.speed * time.delta_secs();
         transform.translation.y += direction.y * enemy.speed * time.delta_secs();
     }
+}
+
+pub fn position_enemy_spawn_system(
+    mut commands: Commands,
+    time: Res<Time<Fixed>>,
+    mut spawn_timer: ResMut<PositionEnemySpawnTimer>,
+    player_query: Query<&Transform, With<Player>>,
+    position_enemies: Query<(), With<PositionSpawnedEnemy>>,
+) {
+    if !position_enemies.is_empty() {
+        return;
+    }
+
+    spawn_timer.0.tick(time.delta());
+    if !spawn_timer.0.is_finished() {
+        return;
+    }
+
+    let player_transform = player_query.single().unwrap();
+    commands.spawn((
+        Sprite::from_color(Color::srgb(1.0, 0.65, 0.1), Vec2::splat(40.0)),
+        Transform::from_xyz(
+            player_transform.translation.x,
+            player_transform.translation.y,
+            0.05,
+        ),
+        Enemy {
+            spawn_warning: Some(Timer::from_seconds(1.0, TimerMode::Once)),
+            ..default()
+        },
+        PositionSpawnedEnemy,
+    ));
+    spawn_timer.0.reset();
 }
 
 pub fn projectile_enemy_collision_system(
@@ -99,7 +173,7 @@ pub fn projectile_enemy_collision_system(
         }
 
         for (enemy_entity, enemy_transform, mut enemy) in enemy_query.iter_mut() {
-            if dead_enemies.contains(&enemy_entity) {
+            if dead_enemies.contains(&enemy_entity) || !enemy.can_be_damaged() {
                 continue;
             }
 

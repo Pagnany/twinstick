@@ -79,6 +79,7 @@ fn main() {
         }),));
     app.insert_resource(Time::<Fixed>::from_seconds(UPDATE_INTERVAL));
     app.init_resource::<Score>();
+    app.init_resource::<enemy::PositionEnemySpawnTimer>();
     app.init_resource::<InputMethod>();
     app.init_state::<GameState>();
     app.add_systems(Startup, setup_camera);
@@ -100,6 +101,7 @@ fn main() {
             enemy::enemy_player_collision_system,
             obstacle::obstacle_player_collision_system,
             enemy::enemy_spawn_system,
+            enemy::position_enemy_spawn_system,
             obstacle::obstacle_spawn_system,
         )
             .chain()
@@ -148,7 +150,11 @@ fn main() {
     );
     app.add_systems(
         OnEnter(GameState::Playing),
-        (spawn_gameplay, spawn_input_method_checkbox),
+        (
+            spawn_gameplay,
+            enemy::reset_position_enemy_spawn_timer,
+            spawn_input_method_checkbox,
+        ),
     );
     app.add_systems(
         OnExit(GameState::Playing),
