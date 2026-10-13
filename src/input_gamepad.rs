@@ -31,6 +31,12 @@ pub fn gamepad_aim_system(gamepads: Query<&Gamepad>, mut player_query: Query<&mu
     }
 }
 
+fn right_trigger_held(gamepad: &Gamepad) -> bool {
+    let right_trigger = gamepad.get(GamepadButton::RightTrigger).unwrap_or(0.0);
+    let right_trigger2 = gamepad.get(GamepadButton::RightTrigger2).unwrap_or(0.0);
+    right_trigger > 0.5 || right_trigger2 > 0.5
+}
+
 pub fn gamepad_shoot_system(
     mut commands: Commands,
     gamepads: Query<&Gamepad>,
@@ -39,7 +45,7 @@ pub fn gamepad_shoot_system(
     let (transform, mut player) = player.single_mut().unwrap();
 
     for gamepad in &gamepads {
-        if gamepad.get(GamepadButton::RightTrigger2).unwrap() > 0.5 {
+        if right_trigger_held(gamepad) {
             if player.shoot_cooldown_std.is_finished() {
                 player.shoot_cooldown_std.reset();
 

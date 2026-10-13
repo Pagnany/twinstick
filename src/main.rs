@@ -307,7 +307,8 @@ fn spawn_gameplay(
         player::Player::default(),
     ));
 
-    for angle in [0.0, std::f32::consts::PI] {
+    for index in 0..player::SHIELD_ORB_COUNT {
+        let angle = index as f32 * std::f32::consts::TAU / player::SHIELD_ORB_COUNT as f32;
         let offset = Vec2::from_angle(angle) * player::SHIELD_ORBIT_RADIUS;
         commands.spawn((
             Sprite::from_color(Color::srgb(0.2, 0.8, 1.0), Vec2::splat(18.0)),

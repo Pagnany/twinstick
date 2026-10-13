@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use std::time::Duration;
 
 pub const SHIELD_ORBIT_RADIUS: f32 = 55.0;
+pub const SHIELD_ORB_COUNT: usize = 4;
 
 #[derive(Component)]
 pub struct Player {
