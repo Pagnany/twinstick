@@ -7,6 +7,7 @@ pub mod enemy;
 pub mod input_gamepad;
 pub mod input_keyboard_mouse;
 pub mod menu;
+pub mod obstacle;
 pub mod player;
 pub mod projectile;
 pub mod systems;
@@ -97,7 +98,9 @@ fn main() {
             enemy::shield_orb_enemy_collision_system,
             enemy::projectile_enemy_collision_system,
             enemy::enemy_player_collision_system,
+            obstacle::obstacle_player_collision_system,
             enemy::enemy_spawn_system,
+            obstacle::obstacle_spawn_system,
         )
             .chain()
             .run_if(in_state(GameState::Playing)),
@@ -120,6 +123,7 @@ fn main() {
             player::shield_orbital_system,
             projectile::projectile_movement_system,
             enemy::enemy_movement_system,
+            obstacle::obstacle_movement_system,
             update_score_display,
         )
             .run_if(in_state(GameState::Playing)),
@@ -323,6 +327,7 @@ fn despawn_gameplay(
     player_entities: Query<Entity, With<player::Player>>,
     orb_entities: Query<Entity, With<player::ShieldOrb>>,
     enemy_entities: Query<Entity, With<enemy::Enemy>>,
+    obstacle_entities: Query<Entity, With<obstacle::Obstacle>>,
     projectile_entities: Query<Entity, With<projectile::Projectile>>,
     score_displays: Query<Entity, With<ScoreDisplay>>,
 ) {
@@ -330,6 +335,7 @@ fn despawn_gameplay(
         .iter()
         .chain(orb_entities.iter())
         .chain(enemy_entities.iter())
+        .chain(obstacle_entities.iter())
         .chain(projectile_entities.iter())
         .chain(score_displays.iter())
     {
