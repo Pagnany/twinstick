@@ -24,7 +24,7 @@ impl Default for Enemy {
 pub fn enemy_player_collision_system(
     player_query: Query<(&Transform, &Player), With<Player>>,
     enemy_query: Query<(&Transform, &Enemy), Without<Player>>,
-    mut game_over: ResMut<crate::GameOver>,
+    mut next_state: ResMut<NextState<crate::GameState>>,
 ) {
     let (player_transform, player) = player_query.single().unwrap();
     let player_pos = player_transform.translation.truncate();
@@ -34,7 +34,8 @@ pub fn enemy_player_collision_system(
         let distance = player_pos.distance(enemy_pos);
 
         if distance <= player.radius + enemy.radius {
-            game_over.is_game_over = true;
+            next_state.set(crate::GameState::GameOver);
+            break;
         }
     }
 }
