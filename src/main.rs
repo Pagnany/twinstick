@@ -6,6 +6,7 @@ use bevy::{
 pub mod enemy;
 pub mod input_gamepad;
 pub mod input_keyboard_mouse;
+pub mod menu;
 pub mod player;
 pub mod projectile;
 pub mod systems;
@@ -25,18 +26,6 @@ pub enum GameState {
     Playing,
     GameOver,
 }
-
-#[derive(Component)]
-struct MenuScreen;
-
-#[derive(Component)]
-struct GameOverScreen;
-
-#[derive(Component)]
-struct StartButton;
-
-#[derive(Component)]
-struct ReturnToMenuButton;
 
 const WINDOW_TITLE: &str = "Twinstick";
 pub const WINDOW_WIDTH: f32 = 1920.0;
@@ -77,7 +66,11 @@ fn main() {
     app.add_systems(Startup, setup_camera);
     app.add_systems(
         Update,
-        (systems::kill_game_on_esc, start_button_system, return_to_menu_button_system),
+        (
+            systems::kill_game_on_esc,
+            menu::start_button_system,
+            menu::return_to_menu_button_system,
+        ),
     );
     app.add_systems(
         FixedUpdate,
@@ -108,71 +101,17 @@ fn main() {
         )
             .run_if(in_state(GameState::Playing)),
     );
-    app.add_systems(OnEnter(GameState::Menu), spawn_menu_screen);
-    app.add_systems(OnExit(GameState::Menu), despawn_menu_screen);
+    app.add_systems(OnEnter(GameState::Menu), menu::spawn_menu_screen);
+    app.add_systems(OnExit(GameState::Menu), menu::despawn_menu_screen);
     app.add_systems(OnEnter(GameState::Playing), spawn_gameplay);
     app.add_systems(OnExit(GameState::Playing), despawn_gameplay);
-    app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_screen);
-    app.add_systems(OnExit(GameState::GameOver), despawn_game_over_screen);
+    app.add_systems(OnEnter(GameState::GameOver), menu::spawn_game_over_screen);
+    app.add_systems(OnExit(GameState::GameOver), menu::despawn_game_over_screen);
     app.run();
 }
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
-}
-
-fn spawn_menu_screen(mut commands: Commands) {
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(32.0),
-                ..default()
-            },
-            BackgroundColor(Color::srgb(0.025, 0.035, 0.07)),
-            MenuScreen,
-        ))
-        .with_children(|screen| {
-            screen.spawn((
-                Text::new("TWINSTICK"),
-                TextFont {
-                    font_size: FontSize::Px(80.0),
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-            ));
-            screen
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(280.0),
-                        height: Val::Px(90.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgb(0.12, 0.42, 0.72)),
-                    StartButton,
-                ))
-                .with_child((
-                    Text::new("START"),
-                    TextFont {
-                        font_size: FontSize::Px(40.0),
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                ));
-        });
-}
-
-fn despawn_menu_screen(mut commands: Commands, screen: Query<Entity, With<MenuScreen>>) {
-    for entity in &screen {
-        commands.entity(entity).despawn();
-    }
 }
 
 fn spawn_gameplay(mut commands: Commands, asset_server: Res<AssetServer>, mut score: ResMut<Score>) {
@@ -226,84 +165,6 @@ fn despawn_gameplay(
         .chain(score_displays.iter())
     {
         commands.entity(entity).despawn();
-    }
-}
-
-fn spawn_game_over_screen(mut commands: Commands) {
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(32.0),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.025, 0.035, 0.07, 0.96)),
-            GameOverScreen,
-        ))
-        .with_children(|screen| {
-            screen.spawn((
-                Text::new("GAME OVER"),
-                TextFont {
-                    font_size: FontSize::Px(80.0),
-                    ..default()
-                },
-                TextColor(Color::srgb(1.0, 0.3, 0.3)),
-            ));
-            screen
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(280.0),
-                        height: Val::Px(90.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgb(0.12, 0.42, 0.72)),
-                    ReturnToMenuButton,
-                ))
-                .with_child((
-                    Text::new("MAIN MENU"),
-                    TextFont {
-                        font_size: FontSize::Px(32.0),
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                ));
-        });
-}
-
-fn despawn_game_over_screen(mut commands: Commands, screen: Query<Entity, With<GameOverScreen>>) {
-    for entity in &screen {
-        commands.entity(entity).despawn();
-    }
-}
-
-fn start_button_system(
-    buttons: Query<&Interaction, (Changed<Interaction>, With<StartButton>)>,
-    mut next_state: ResMut<NextState<GameState>>,
-) {
-    if buttons
-        .iter()
-        .any(|interaction| *interaction == Interaction::Pressed)
-    {
-        next_state.set(GameState::Playing);
-    }
-}
-
-fn return_to_menu_button_system(
-    buttons: Query<&Interaction, (Changed<Interaction>, With<ReturnToMenuButton>)>,
-    mut next_state: ResMut<NextState<GameState>>,
-) {
-    if buttons
-        .iter()
-        .any(|interaction| *interaction == Interaction::Pressed)
-    {
-        next_state.set(GameState::Menu);
     }
 }
 
