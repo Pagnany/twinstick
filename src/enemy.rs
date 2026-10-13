@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::RngExt;
 
-use crate::player::Player;
+use crate::player::{Player, ShieldOrb};
 use crate::projectile::Projectile;
 
 #[derive(Component)]
@@ -39,6 +39,34 @@ pub fn enemy_player_collision_system(
     }
 }
 
+pub fn shield_orb_enemy_collision_system(
+    mut commands: Commands,
+    orb_query: Query<(Entity, &Transform, &ShieldOrb)>,
+    enemy_query: Query<(Entity, &Transform, &Enemy)>,
+    mut score: ResMut<crate::Score>,
+) {
+    let mut hit_enemies = std::collections::HashSet::new();
+
+    for (orb_entity, orb_transform, orb) in orb_query.iter() {
+        let orb_pos = orb_transform.translation.truncate();
+
+        for (enemy_entity, enemy_transform, enemy) in enemy_query.iter() {
+            if hit_enemies.contains(&enemy_entity) {
+                continue;
+            }
+
+            let distance = orb_pos.distance(enemy_transform.translation.truncate());
+            if distance <= orb.radius + enemy.radius {
+                commands.entity(enemy_entity).despawn();
+                commands.entity(orb_entity).despawn();
+                hit_enemies.insert(enemy_entity);
+                score.value += 1;
+                break;
+            }
+        }
+    }
+}
+
 pub fn enemy_movement_system(
     time: Res<Time>,
     player_query: Query<&Transform, With<Player>>,
@@ -60,13 +88,20 @@ pub fn projectile_enemy_collision_system(
     mut commands: Commands,
     projectile_query: Query<(Entity, &Transform, &Projectile)>,
     mut enemy_query: Query<(Entity, &Transform, &mut Enemy)>,
+    mut score: ResMut<crate::Score>,
 ) {
+    let mut dead_enemies = std::collections::HashSet::new();
+
     for (projectile_entity, projectile_transform, projectile) in projectile_query.iter() {
         if !projectile.from_player {
             continue;
         }
 
         for (enemy_entity, enemy_transform, mut enemy) in enemy_query.iter_mut() {
+            if dead_enemies.contains(&enemy_entity) {
+                continue;
+            }
+
             let distance = projectile_transform
                 .translation
                 .truncate()
@@ -75,6 +110,8 @@ pub fn projectile_enemy_collision_system(
                 enemy.health -= projectile.damage;
                 if enemy.health <= 0 {
                     commands.entity(enemy_entity).despawn();
+                    dead_enemies.insert(enemy_entity);
+                    score.value += 1;
                 }
                 commands.entity(projectile_entity).despawn();
                 break;

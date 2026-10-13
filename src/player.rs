@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use std::f32::consts::PI;
 use std::time::Duration;
 
+pub const SHIELD_ORBIT_RADIUS: f32 = 55.0;
+
 #[derive(Component)]
 pub struct Player {
     pub health: i32,
@@ -30,6 +32,12 @@ impl Default for Player {
     }
 }
 
+#[derive(Component)]
+pub struct ShieldOrb {
+    pub angle: f32,
+    pub radius: f32,
+}
+
 pub fn player_movement_system(time: Res<Time>, mut query: Query<(&mut Player, &mut Transform)>) {
     let (mut player, mut transform) = query.single_mut().unwrap();
 
@@ -56,4 +64,20 @@ pub fn player_movement_system(time: Res<Time>, mut query: Query<(&mut Player, &m
 
     player.velocity.x -= player.velocity.x * player.friction * time.delta_secs();
     player.velocity.y -= player.velocity.y * player.friction * time.delta_secs();
+}
+
+pub fn shield_orbital_system(
+    time: Res<Time>,
+    player_query: Query<&Transform, With<Player>>,
+    mut orb_query: Query<(&mut Transform, &mut ShieldOrb), Without<Player>>,
+) {
+    let player_transform = player_query.single().unwrap();
+    let player_pos = player_transform.translation.truncate();
+
+    for (mut transform, mut orb) in orb_query.iter_mut() {
+        orb.angle = (orb.angle + time.delta_secs() * 2.0).rem_euclid(std::f32::consts::TAU);
+        let offset = Vec2::from_angle(orb.angle) * SHIELD_ORBIT_RADIUS;
+        transform.translation.x = player_pos.x + offset.x;
+        transform.translation.y = player_pos.y + offset.y;
+    }
 }

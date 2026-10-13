@@ -15,6 +15,14 @@ pub struct GameOver {
     pub is_game_over: bool,
 }
 
+#[derive(Resource, Default)]
+pub struct Score {
+    pub value: u32,
+}
+
+#[derive(Component)]
+struct ScoreDisplay;
+
 const WINDOW_TITLE: &str = "Twinstick";
 pub const WINDOW_WIDTH: f32 = 1920.0;
 pub const WINDOW_HEIGHT: f32 = 1080.0;
@@ -52,6 +60,7 @@ fn main() {
     app.insert_resource(GameOver {
         is_game_over: false,
     });
+    app.init_resource::<Score>();
     app.add_systems(Startup, setup);
     app.add_systems(
         Update,
@@ -65,18 +74,22 @@ fn main() {
             input_keyboard_mouse::mouse_aim_system,
             input_keyboard_mouse::mouse_shoot_projectile,
             player::player_movement_system,
+            player::shield_orbital_system,
             projectile::projectile_movement_system,
             enemy::enemy_movement_system,
+            update_score_display,
             systems::game_over_system,
         ),
     );
     app.add_systems(
         FixedUpdate,
         (
+            enemy::shield_orb_enemy_collision_system,
             enemy::projectile_enemy_collision_system,
             enemy::enemy_player_collision_system,
             enemy::enemy_spawn_system,
-        ),
+        )
+            .chain(),
     );
     app.run();
 }
@@ -87,7 +100,42 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
 
     commands.spawn((
+        Text::new("Score: 0"),
+        TextFont {
+            font_size: FontSize::Px(32.0),
+            ..default()
+        },
+        TextColor(Color::WHITE),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(20.0),
+            left: Val::Px(20.0),
+            ..default()
+        },
+        ScoreDisplay,
+    ));
+
+    commands.spawn((
         Sprite::from_image(player_texture),
         player::Player::default(),
     ));
+
+    for angle in [0.0, std::f32::consts::PI] {
+        let offset = Vec2::from_angle(angle) * player::SHIELD_ORBIT_RADIUS;
+        commands.spawn((
+            Sprite::from_color(Color::srgb(0.2, 0.8, 1.0), Vec2::splat(18.0)),
+            Transform::from_xyz(offset.x, offset.y, 0.1),
+            player::ShieldOrb { angle, radius: 9.0 },
+        ));
+    }
+}
+
+fn update_score_display(score: Res<Score>, mut display: Query<&mut Text, With<ScoreDisplay>>) {
+    if !score.is_changed() {
+        return;
+    }
+
+    for mut text in &mut display {
+        **text = format!("Score: {}", score.value);
+    }
 }
