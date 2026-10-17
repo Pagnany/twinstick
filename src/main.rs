@@ -2,6 +2,7 @@ use bevy::{
     prelude::*,
     window::{EnabledButtons, WindowResolution, WindowTheme},
 };
+use std::time::Duration;
 
 pub mod enemy;
 pub mod input_gamepad;
@@ -17,6 +18,12 @@ pub struct Score {
     pub value: u32,
 }
 
+#[derive(Resource, Default)]
+struct SurvivalTime {
+    elapsed: Duration,
+    displayed_seconds: u64,
+}
+
 #[derive(Resource, Default, Clone, Copy, PartialEq, Eq)]
 enum InputMethod {
     #[default]
@@ -26,6 +33,12 @@ enum InputMethod {
 
 #[derive(Component)]
 struct ScoreDisplay;
+
+#[derive(Component)]
+struct SurvivalTimeDisplay;
+
+#[derive(Component)]
+struct SurvivalTimeText;
 
 #[derive(Component)]
 struct InputMethodCheckbox;
@@ -79,6 +92,7 @@ fn main() {
         }),));
     app.insert_resource(Time::<Fixed>::from_seconds(UPDATE_INTERVAL));
     app.init_resource::<Score>();
+    app.init_resource::<SurvivalTime>();
     app.init_resource::<enemy::PositionEnemySpawnTimer>();
     app.init_resource::<InputMethod>();
     app.init_state::<GameState>();
@@ -127,6 +141,7 @@ fn main() {
             enemy::enemy_movement_system,
             obstacle::obstacle_movement_system,
             update_score_display,
+            update_survival_time_display,
         )
             .run_if(in_state(GameState::Playing)),
     );
@@ -292,8 +307,10 @@ fn spawn_gameplay(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut score: ResMut<Score>,
+    mut survival_time: ResMut<SurvivalTime>,
 ) {
     score.value = 0;
+    *survival_time = SurvivalTime::default();
     let player_texture = asset_server.load("textures/player01.png");
 
     commands.spawn((
@@ -311,6 +328,28 @@ fn spawn_gameplay(
         },
         ScoreDisplay,
     ));
+
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(20.0),
+                left: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            SurvivalTimeDisplay,
+        ))
+        .with_child((
+            Text::new("Time: 0s"),
+            TextFont {
+                font_size: FontSize::Px(32.0),
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            SurvivalTimeText,
+        ));
 
     commands.spawn((
         Sprite::from_image(player_texture),
@@ -336,6 +375,7 @@ fn despawn_gameplay(
     obstacle_entities: Query<Entity, With<obstacle::Obstacle>>,
     projectile_entities: Query<Entity, With<projectile::Projectile>>,
     score_displays: Query<Entity, With<ScoreDisplay>>,
+    survival_time_displays: Query<Entity, With<SurvivalTimeDisplay>>,
 ) {
     for entity in player_entities
         .iter()
@@ -344,8 +384,26 @@ fn despawn_gameplay(
         .chain(obstacle_entities.iter())
         .chain(projectile_entities.iter())
         .chain(score_displays.iter())
+        .chain(survival_time_displays.iter())
     {
         commands.entity(entity).despawn();
+    }
+}
+
+fn update_survival_time_display(
+    time: Res<Time>,
+    mut survival_time: ResMut<SurvivalTime>,
+    mut display: Query<&mut Text, With<SurvivalTimeText>>,
+) {
+    survival_time.elapsed += time.delta();
+    let elapsed_seconds = survival_time.elapsed.as_secs();
+    if elapsed_seconds == survival_time.displayed_seconds {
+        return;
+    }
+
+    survival_time.displayed_seconds = elapsed_seconds;
+    for mut text in &mut display {
+        **text = format!("Time: {elapsed_seconds}s");
     }
 }
 
