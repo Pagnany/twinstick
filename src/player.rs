@@ -15,6 +15,7 @@ pub struct Player {
     pub angle: f32,
     pub move_acceleration: f32,
     pub friction: f32,
+    pub shooting: bool,
     pub shoot_cooldown_std: Timer,
 }
 
@@ -28,6 +29,7 @@ impl Default for Player {
             angle: 0.0,
             move_acceleration: 15000.0,
             friction: 15.0,
+            shooting: false,
             shoot_cooldown_std: Timer::new(Duration::from_millis(200), TimerMode::Once),
         }
     }

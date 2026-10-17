@@ -62,26 +62,28 @@ pub fn mouse_shoot_projectile(
 ) {
     let (transform, mut player) = player.single_mut().unwrap();
 
-    if mouse_input.pressed(MouseButton::Left) {
-        if player.shoot_cooldown_std.is_finished() {
-            player.shoot_cooldown_std.reset();
+    if mouse_input.just_pressed(MouseButton::Left) {
+        player.shooting = !player.shooting;
+    }
 
-            let projectile_speed = 1500.0;
-            let velocity = Vec2::new(
-                projectile_speed * player.angle.cos(),
-                projectile_speed * player.angle.sin(),
-            );
+    if player.shooting && player.shoot_cooldown_std.is_finished() {
+        player.shoot_cooldown_std.reset();
 
-            commands.spawn((
-                Sprite::from_color(Color::srgb(0.8, 0.8, 0.2), Vec2::new(10.0, 10.0)),
-                Transform::from_xyz(transform.translation.x, transform.translation.y, -0.2),
-                Projectile {
-                    radius: 5.0,
-                    velocity,
-                    damage: 50,
-                    from_player: true,
-                },
-            ));
-        }
+        let projectile_speed = 1500.0;
+        let velocity = Vec2::new(
+            projectile_speed * player.angle.cos(),
+            projectile_speed * player.angle.sin(),
+        );
+
+        commands.spawn((
+            Sprite::from_color(Color::srgb(0.8, 0.8, 0.2), Vec2::new(10.0, 10.0)),
+            Transform::from_xyz(transform.translation.x, transform.translation.y, -0.2),
+            Projectile {
+                radius: 5.0,
+                velocity,
+                damage: 50,
+                from_player: true,
+            },
+        ));
     }
 }
